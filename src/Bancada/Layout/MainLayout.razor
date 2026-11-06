@@ -1,0 +1,40 @@
+@inherits LayoutComponentBase
+@inject IJSRuntime Js
+
+<a class="skip" href="#conteudo">Pular para o conteúdo</a>
+<header class="top no-print">
+    <a class="brand" href="" aria-label="Bancada, painel">
+        <span class="logo" aria-hidden="true">B</span><span>Bancada</span>
+    </a>
+    <nav aria-label="Principal">
+        <NavLink href="" Match="NavLinkMatch.All">Painel</NavLink>
+        <NavLink href="os">Ordens</NavLink>
+        <NavLink href="clientes">Clientes</NavLink>
+    </nav>
+    <div class="tools">
+        <a class="btn primary" href="os/nova">Nova OS</a>
+        <button class="btn icon" type="button" @onclick="Toggle" aria-label="Alternar tema claro/escuro" title="Alternar tema">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        </button>
+    </div>
+</header>
+<main id="conteudo">
+    @Body
+</main>
+<footer class="foot no-print">
+    Demo em Blazor WebAssembly. Os dados ficam só neste navegador (localStorage) e os nomes são fictícios.
+    <button type="button" class="link" @onclick="Reset">Restaurar dados de exemplo</button>
+</footer>
+
+@code {
+    [Inject] private OrderStore Store { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private async Task Toggle() => await Js.InvokeAsync<string>("bancada.toggleTheme");
+
+    private void Reset()
+    {
+        Store.ResetDemo();
+        Nav.NavigateTo("", forceLoad: true);
+    }
+}

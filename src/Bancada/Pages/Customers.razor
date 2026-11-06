@@ -1,0 +1,79 @@
+@page "/clientes"
+@inject OrderStore Store
+
+<PageTitle>Clientes · Bancada</PageTitle>
+
+<div class="page-head">
+    <div>
+        <p class="eyebrow">Cadastro</p>
+        <h1>Clientes</h1>
+    </div>
+    <button class="btn primary" type="button" @onclick="StartNew">Novo cliente</button>
+</div>
+
+@if (Editing is not null)
+{
+    <form class="panel form" @onsubmit="Save" @onsubmit:preventDefault novalidate>
+        <h2>@(_original is not null ? "Editar cliente" : "Novo cliente")</h2>
+        <div class="grid3">
+            <label>Nome<input @bind="Editing.Name" autocomplete="off" /></label>
+            <label>Telefone<input @bind="Editing.Phone" inputmode="tel" autocomplete="off" /></label>
+            <label>E-mail<input type="email" @bind="Editing.Email" autocomplete="off" /></label>
+        </div>
+        <label>Observações<textarea rows="2" @bind="Editing.Notes"></textarea></label>
+        @if (Error is not null) { <p class="error" role="alert">@Error</p> }
+        <div class="actions">
+            <button class="btn" type="button" @onclick="() => Editing = null">Cancelar</button>
+            <button class="btn primary" type="submit">Salvar</button>
+        </div>
+    </form>
+}
+
+<div class="table-wrap">
+    <table class="table">
+        <thead><tr><th>Nome</th><th>Contato</th><th class="num">OS</th><th><span class="sr-only">Ações</span></th></tr></thead>
+        <tbody>
+        @foreach (var c in Store.Customers.OrderBy(c => c.Name))
+        {
+            var cust = c;
+            <tr>
+                <td data-label="Nome"><strong>@c.Name</strong></td>
+                <td data-label="Contato">@c.Phone <span class="muted">@c.Email</span></td>
+                <td data-label="OS" class="num">@Store.Orders.Count(o => o.CustomerId == c.Id)</td>
+                <td class="act"><button class="btn small ghost" type="button" @onclick="() => Edit(cust)">Editar</button></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private Customer? Editing { get; set; }
+    private string? Error { get; set; }
+
+    private void StartNew() { Error = null; _original = null; Editing = new Customer(); }
+
+    // Edit a copy so cancelling never changes the stored customer.
+    private Customer? _original;
+    private void Edit(Customer c)
+    {
+        Error = null; _original = c;
+        Editing = new Customer { Id = c.Id, Name = c.Name, Phone = c.Phone, Email = c.Email, Notes = c.Notes };
+    }
+
+    private void Save()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(Editing!.Name)) throw new ArgumentException("Nome obrigatório.");
+            if (_original is not null && Store.Customer(Editing.Id) is { } cur)
+            {
+                cur.Name = Editing.Name; cur.Phone = Editing.Phone; cur.Email = Editing.Email; cur.Notes = Editing.Notes;
+                Store.SaveCustomer(cur);
+            }
+            else Store.SaveCustomer(Editing);
+            Editing = null; _original = null;
+        }
+        catch (ArgumentException e) { Error = e.Message; }
+    }
+}

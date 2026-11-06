@@ -1,0 +1,168 @@
+@page "/os/{Id:guid}"
+@inject OrderStore Store
+
+@if (Order is null)
+{
+    <PageTitle>OS não encontrada · Bancada</PageTitle>
+    <div class="empty">
+        <h1>OS não encontrada</h1>
+        <a class="btn primary" href="os">Ver todas as OS</a>
+    </div>
+    return;
+}
+
+<PageTitle>@Quote.Code(Order.Number) · Bancada</PageTitle>
+
+<nav class="crumb no-print" aria-label="Trilha"><a href="os">Ordens</a> / <span>@Quote.Code(Order.Number)</span></nav>
+<div class="page-head">
+    <div>
+        <p class="eyebrow">@Store.CustomerName(Order) · entrada em @Quote.Date(Order.CreatedAt)</p>
+        <h1>@Quote.Code(Order.Number) <span class="muted-title">@Order.Brand @Order.Device</span></h1>
+    </div>
+    <div class="head-actions">
+        <a class="btn" href="os/@Order.Id/comprovante">Comprovante</a>
+        @if (Next is not null)
+        {
+            <button class="btn primary" type="button" @onclick="Advance">Mover para “@Quote.StatusLabel(Next.Value)”</button>
+        }
+    </div>
+</div>
+
+@if (Message is not null)
+{
+    <p class="notice" role="alert">@Message</p>
+}
+
+<Stepper Current="Order.Status" />
+
+<div class="split">
+    <div class="stack">
+        <section class="panel">
+            <h2>Aparelho</h2>
+            <dl class="facts">
+                <div><dt>Equipamento</dt><dd>@Order.Device @Order.Brand @Order.Model</dd></div>
+                <div><dt>Série / IMEI</dt><dd>@(string.IsNullOrWhiteSpace(Order.Serial) ? "—" : Order.Serial)</dd></div>
+                <div><dt>Acessórios</dt><dd>@(string.IsNullOrWhiteSpace(Order.Accessories) ? "—" : Order.Accessories)</dd></div>
+                <div class="wide"><dt>Defeito relatado</dt><dd>@Order.Defect</dd></div>
+            </dl>
+            <label class="block">Diagnóstico técnico
+                <textarea rows="3" @bind="Order.Diagnosis" @bind:after="Save" placeholder="O que foi encontrado na bancada"></textarea>
+            </label>
+        </section>
+
+        <section class="panel">
+            <div class="row-between">
+                <h2>Orçamento</h2>
+                <label class="inline">Resposta do cliente
+                    <select @bind="Order.Decision" @bind:after="Save">
+                        @foreach (var d in Enum.GetValues<QuoteDecision>())
+                        {
+                            <option value="@d">@Quote.DecisionLabel(d)</option>
+                        }
+                    </select>
+                </label>
+            </div>
+
+            @if (Order.Lines.Count == 0)
+            {
+                <p class="muted">Nenhum item no orçamento ainda.</p>
+            }
+            else
+            {
+                <div class="table-wrap">
+                <table class="table lines">
+                    <thead><tr><th>Descrição</th><th class="num">Qtd</th><th class="num">Unit.</th><th class="num">Total</th><th><span class="sr-only">Remover</span></th></tr></thead>
+                    <tbody>
+                    @foreach (var l in Order.Lines.ToList())
+                    {
+                        var line = l;
+                        <tr>
+                            <td data-label="Descrição">@line.Description</td>
+                            <td data-label="Qtd" class="num">@line.Qty</td>
+                            <td data-label="Unit." class="num">@Quote.Money(line.UnitPrice)</td>
+                            <td data-label="Total" class="num">@Quote.Money(line.Total)</td>
+                            <td class="act"><button type="button" class="btn small ghost" aria-label="Remover @line.Description" @onclick="() => Remove(line)">Remover</button></td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+                </div>
+            }
+
+            <form class="add-line" @onsubmit="AddLine" @onsubmit:preventDefault>
+                <label class="grow">Item<input @bind="NewDesc" placeholder="Peça ou serviço" /></label>
+                <label class="qty">Qtd<input type="number" min="1" @bind="NewQty" /></label>
+                <label class="price">Valor (R$)<input type="number" min="0" step="0.01" @bind="NewPrice" /></label>
+                <button class="btn" type="submit">Adicionar</button>
+            </form>
+            @if (LineError is not null) { <p class="error" role="alert">@LineError</p> }
+
+            <dl class="totals">
+                <div><dt>Subtotal</dt><dd data-testid="subtotal">@Quote.Money(Order.Subtotal)</dd></div>
+                <div>
+                    <dt><label for="disc">Desconto (R$)</label></dt>
+                    <dd><input id="disc" class="disc" type="number" min="0" step="0.01" @bind="Order.Discount" @bind:after="Save" /></dd>
+                </div>
+                <div class="grand"><dt>Total</dt><dd data-testid="total">@Quote.Money(Order.Total)</dd></div>
+            </dl>
+        </section>
+    </div>
+
+    <aside class="panel">
+        <h2>Histórico</h2>
+        <ol class="timeline">
+            @foreach (var h in Order.History.AsEnumerable().Reverse())
+            {
+                <li><strong>@Quote.StatusLabel(h.Status)</strong><span class="muted small">@Quote.Stamp(h.At)</span></li>
+            }
+        </ol>
+        <h2 class="mt">Cliente</h2>
+        @if (Cust is not null)
+        {
+            <p class="mb0"><strong>@Cust.Name</strong></p>
+            <p class="muted small mb0">@Cust.Phone</p>
+            <p class="muted small">@Cust.Email</p>
+        }
+    </aside>
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    private ServiceOrder? Order => Store.Order(Id);
+    private Customer? Cust => Order is null ? null : Store.Customer(Order.CustomerId);
+    private OrderStatus? Next => Order is null ? null : OrderStore.Next(Order.Status);
+    private string? Message { get; set; }
+    private string? LineError { get; set; }
+    private string NewDesc { get; set; } = "";
+    private int NewQty { get; set; } = 1;
+    private decimal NewPrice { get; set; }
+
+    private void Save() => Store.Update(Order!);
+
+    private void Advance()
+    {
+        Message = Store.CanAdvance(Order!);
+        if (Message is null) Store.Advance(Order!);
+    }
+
+    private void AddLine()
+    {
+        if (string.IsNullOrWhiteSpace(NewDesc) || NewQty < 1 || NewPrice < 0)
+        {
+            LineError = "Informe a descrição, uma quantidade de 1 ou mais e um valor válido.";
+            return;
+        }
+        LineError = null;
+        Order!.Lines.Add(new QuoteLine(NewDesc.Trim(), NewQty, NewPrice));
+        if (Order.Decision == QuoteDecision.None) Order.Decision = QuoteDecision.Pending;
+        NewDesc = ""; NewQty = 1; NewPrice = 0;
+        Save();
+    }
+
+    private void Remove(QuoteLine l)
+    {
+        Order!.Lines.Remove(l);
+        if (Order.Lines.Count == 0) Order.Decision = QuoteDecision.None;
+        Save();
+    }
+}

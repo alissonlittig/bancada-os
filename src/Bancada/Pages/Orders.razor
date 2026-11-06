@@ -1,0 +1,59 @@
+@page "/os"
+@inject OrderStore Store
+
+<PageTitle>Ordens · Bancada</PageTitle>
+
+<div class="page-head">
+    <div>
+        <p class="eyebrow">Ordens de serviço</p>
+        <h1>Todas as OS</h1>
+    </div>
+    <a class="btn primary" href="os/nova">Nova OS</a>
+</div>
+
+<div class="toolbar">
+    <label class="search">
+        <span class="sr-only">Buscar</span>
+        <input type="search" placeholder="Buscar por número, cliente ou aparelho" @bind="Text" @bind:event="oninput" />
+    </label>
+    <div class="chips" role="group" aria-label="Filtrar por status">
+        <button type="button" class="chip @(Filter is null ? "on" : "")" aria-pressed="@(Filter is null)" @onclick="() => Filter = null">Todas</button>
+        @foreach (var s in Enum.GetValues<OrderStatus>())
+        {
+            var st = s;
+            <button type="button" class="chip @(Filter == st ? "on" : "")" aria-pressed="@(Filter == st)" @onclick="() => Filter = st">@Quote.StatusLabel(st)</button>
+        }
+    </div>
+</div>
+
+@{ var rows = Store.Search(Text, Filter).ToList(); }
+@if (rows.Count == 0)
+{
+    <div class="empty"><p>Nenhuma OS encontrada para esse filtro.</p></div>
+}
+else
+{
+    <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th>OS</th><th>Cliente</th><th>Aparelho</th><th>Status</th><th>Entrada</th><th class="num">Total</th></tr></thead>
+            <tbody>
+            @foreach (var o in rows)
+            {
+                <tr>
+                    <td data-label="OS"><a class="code" href="os/@o.Id">@Quote.Code(o.Number)</a></td>
+                    <td data-label="Cliente">@Store.CustomerName(o)</td>
+                    <td data-label="Aparelho">@o.Brand @o.Device <span class="muted">@o.Model</span></td>
+                    <td data-label="Status"><StatusBadge Status="o.Status" /></td>
+                    <td data-label="Entrada">@Quote.Date(o.CreatedAt)</td>
+                    <td data-label="Total" class="num">@(o.Lines.Count > 0 ? Quote.Money(o.Total) : "—")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private string Text { get; set; } = "";
+    private OrderStatus? Filter { get; set; }
+}

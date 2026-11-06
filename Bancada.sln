@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{6A2D89CE-3542-429F-B8D3-E66B71B0EA0E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bancada", "src\Bancada\Bancada.csproj", "{AE6110A3-1361-49D4-A1AC-A73D1F328DD4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{A982F0BA-AACF-4C1C-BE9C-20BB279B2316}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bancada.Tests", "tests\Bancada.Tests\Bancada.Tests.csproj", "{F896D71E-6011-4B11-826E-4E5ECFF29511}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AE6110A3-1361-49D4-A1AC-A73D1F328DD4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE6110A3-1361-49D4-A1AC-A73D1F328DD4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE6110A3-1361-49D4-A1AC-A73D1F328DD4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE6110A3-1361-49D4-A1AC-A73D1F328DD4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F896D71E-6011-4B11-826E-4E5ECFF29511}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F896D71E-6011-4B11-826E-4E5ECFF29511}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F896D71E-6011-4B11-826E-4E5ECFF29511}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F896D71E-6011-4B11-826E-4E5ECFF29511}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{AE6110A3-1361-49D4-A1AC-A73D1F328DD4} = {6A2D89CE-3542-429F-B8D3-E66B71B0EA0E}
+		{F896D71E-6011-4B11-826E-4E5ECFF29511} = {A982F0BA-AACF-4C1C-BE9C-20BB279B2316}
+	EndGlobalSection
+EndGlobal

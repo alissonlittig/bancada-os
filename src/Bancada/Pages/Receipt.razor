@@ -1,0 +1,82 @@
+@page "/os/{Id:guid}/comprovante"
+@inject OrderStore Store
+@inject IJSRuntime Js
+
+@if (Order is null)
+{
+    <div class="empty"><h1>OS não encontrada</h1><a class="btn primary" href="os">Ver todas as OS</a></div>
+    return;
+}
+
+<PageTitle>Comprovante @Quote.Code(Order.Number) · Bancada</PageTitle>
+
+<div class="no-print page-head">
+    <div>
+        <p class="eyebrow">Pré-visualização</p>
+        <h1>Comprovante de entrada</h1>
+    </div>
+    <div class="head-actions">
+        <a class="btn" href="os/@Order.Id">Voltar</a>
+        <button class="btn primary" type="button" @onclick="Print">Imprimir</button>
+    </div>
+</div>
+
+<article class="receipt" aria-label="Comprovante">
+    <header>
+        <div>
+            <div class="brand"><span class="logo" aria-hidden="true">B</span><span>Bancada Assistência Técnica</span></div>
+            <p class="muted small mb0">Rua das Oficinas, 120 · Curitiba/PR · (41) 3000-0000 (exemplo)</p>
+        </div>
+        <div class="r-code">
+            <span class="muted small">Ordem de serviço</span>
+            <strong>@Quote.Code(Order.Number)</strong>
+            <span class="small">@Quote.Stamp(Order.CreatedAt)</span>
+        </div>
+    </header>
+
+    <section>
+        <h2>Cliente</h2>
+        <p class="mb0"><strong>@Cust?.Name</strong> · @Cust?.Phone</p>
+    </section>
+    <section>
+        <h2>Aparelho</h2>
+        <p class="mb0">@Order.Device @Order.Brand @Order.Model · Série/IMEI: @(string.IsNullOrWhiteSpace(Order.Serial) ? "não informado" : Order.Serial)</p>
+        <p class="mb0">Acessórios: @(string.IsNullOrWhiteSpace(Order.Accessories) ? "nenhum" : Order.Accessories)</p>
+        <p class="mb0">Defeito relatado: @Order.Defect</p>
+        <p class="mb0">Situação: <strong>@Quote.StatusLabel(Order.Status)</strong></p>
+    </section>
+
+    @if (Order.Lines.Count > 0)
+    {
+        <section>
+            <h2>Orçamento <span class="muted small">(@Quote.DecisionLabel(Order.Decision).ToLowerInvariant())</span></h2>
+            <table class="table plain">
+                <thead><tr><th>Item</th><th class="num">Qtd</th><th class="num">Valor</th></tr></thead>
+                <tbody>
+                @foreach (var l in Order.Lines)
+                {
+                    <tr><td>@l.Description</td><td class="num">@l.Qty</td><td class="num">@Quote.Money(l.Total)</td></tr>
+                }
+                </tbody>
+                <tfoot>
+                    @if (Order.Discount > 0) { <tr><td colspan="2">Desconto</td><td class="num">− @Quote.Money(Order.Subtotal - Order.Total)</td></tr> }
+                    <tr class="grand"><td colspan="2">Total</td><td class="num">@Quote.Money(Order.Total)</td></tr>
+                </tfoot>
+            </table>
+        </section>
+    }
+
+    <p class="small terms">Aparelhos não retirados em 90 dias após o aviso de conclusão poderão ser descartados. Garantia de 90 dias sobre peças e serviços aplicados.</p>
+
+    <div class="sign">
+        <div><span></span>Assinatura do cliente</div>
+        <div><span></span>Técnico responsável</div>
+    </div>
+</article>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    private ServiceOrder? Order => Store.Order(Id);
+    private Customer? Cust => Order is null ? null : Store.Customer(Order.CustomerId);
+    private async Task Print() => await Js.InvokeVoidAsync("bancada.print");
+}

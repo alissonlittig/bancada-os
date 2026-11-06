@@ -1,0 +1,5 @@
+<span class="badge s-@Status.ToString().ToLowerInvariant()"><i aria-hidden="true"></i>@Quote.StatusLabel(Status)</span>
+
+@code {
+    [Parameter, EditorRequired] public OrderStatus Status { get; set; }
+}

@@ -1,0 +1,32 @@
+name: CI & Deploy
+on:
+  push: { branches: [main] }
+  pull_request:
+permissions: { contents: read, pages: write, id-token: write }
+concurrency: { group: pages, cancel-in-progress: true }
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: 8.0.x }
+      - run: dotnet restore
+      - run: dotnet build --no-restore -c Release
+      - run: dotnet test --no-build -c Release --verbosity normal
+      - run: dotnet publish src/Bancada -c Release -o out
+      - name: Prepare for GitHub Pages
+        run: |
+          sed -i 's|<base href="/" />|<base href="/bancada-os/" />|' out/wwwroot/index.html
+          cp out/wwwroot/index.html out/wwwroot/404.html
+          touch out/wwwroot/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: out/wwwroot }
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: { name: github-pages, url: '${{ steps.d.outputs.page_url }}' }
+    steps:
+      - id: d
+        uses: actions/deploy-pages@v4

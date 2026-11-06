@@ -1,0 +1,60 @@
+@page "/"
+@implements IDisposable
+@inject OrderStore Store
+
+<PageTitle>Painel · Bancada</PageTitle>
+
+<div class="page-head">
+    <div>
+        <p class="eyebrow">Oficina</p>
+        <h1>Painel da bancada</h1>
+    </div>
+    <a class="btn primary" href="os/nova">Nova OS</a>
+</div>
+
+<section class="kpis" aria-label="Indicadores">
+    <div class="kpi"><span class="k-label">Em aberto</span><strong data-testid="kpi-open">@Open</strong><span class="k-sub">aparelhos na bancada</span></div>
+    <div class="kpi"><span class="k-label">Prontos p/ retirada</span><strong data-testid="kpi-ready">@Count(OrderStatus.Ready)</strong><span class="k-sub">avisar o cliente</span></div>
+    <div class="kpi"><span class="k-label">Orçamentos pendentes</span><strong data-testid="kpi-quotes">@Pending</strong><span class="k-sub">aguardando resposta</span></div>
+    <div class="kpi"><span class="k-label">Faturado em 30 dias</span><strong data-testid="kpi-revenue">@Quote.Money(Revenue)</strong><span class="k-sub">OS entregues</span></div>
+</section>
+
+<section class="board" aria-label="Quadro de ordens">
+    @foreach (var s in Enum.GetValues<OrderStatus>())
+    {
+        var list = Store.Orders.Where(o => o.Status == s).OrderByDescending(o => o.Number).ToList();
+        <div class="col">
+            <h2><StatusBadge Status="s" /> <span class="count">@list.Count</span></h2>
+            @if (list.Count == 0)
+            {
+                <p class="muted small">Nenhuma OS aqui.</p>
+            }
+            @foreach (var o in list)
+            {
+                <a class="card-os" href="os/@o.Id">
+                    <span class="code">@Quote.Code(o.Number)</span>
+                    <strong>@o.Brand @o.Device</strong>
+                    <span class="muted small">@Store.CustomerName(o)</span>
+                    <span class="row-between small">
+                        <span>@Quote.Date(o.CreatedAt)</span>
+                        @if (o.Lines.Count > 0) { <span class="amount">@Quote.Money(o.Total)</span> }
+                    </span>
+                </a>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    private int Open => Store.Orders.Count(o => o.Status != OrderStatus.Delivered);
+    private int Pending => Store.Orders.Count(o => o.Decision == QuoteDecision.Pending && o.Status != OrderStatus.Delivered);
+    private decimal Revenue
+    {
+        get { return Store.RevenueSince(DateTime.Now.AddDays(-30)); }
+    }
+    private int Count(OrderStatus s) => Store.Orders.Count(o => o.Status == s);
+
+    protected override void OnInitialized() => Store.Changed += Refresh;
+    private void Refresh() => InvokeAsync(StateHasChanged);
+    public void Dispose() => Store.Changed -= Refresh;
+}

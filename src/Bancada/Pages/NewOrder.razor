@@ -1,0 +1,94 @@
+@page "/os/nova"
+@inject OrderStore Store
+@inject NavigationManager Nav
+
+<PageTitle>Nova OS · Bancada</PageTitle>
+
+<div class="page-head">
+    <div>
+        <p class="eyebrow">Entrada de aparelho</p>
+        <h1>Abrir nova OS</h1>
+    </div>
+</div>
+
+<form class="panel form" @onsubmit="Submit" @onsubmit:preventDefault novalidate>
+    <fieldset>
+        <legend>Cliente</legend>
+        <div class="seg" role="group" aria-label="Tipo de cliente">
+            <button type="button" class="@(!NewCustomer ? "on" : "")" @onclick="() => NewCustomer = false">Já cadastrado</button>
+            <button type="button" class="@(NewCustomer ? "on" : "")" @onclick="() => NewCustomer = true">Novo cliente</button>
+        </div>
+        @if (!NewCustomer)
+        {
+            <label>Cliente
+                <select @bind="CustomerId">
+                    <option value="@Guid.Empty">Selecione…</option>
+                    @foreach (var c in Store.Customers.OrderBy(c => c.Name))
+                    {
+                        <option value="@c.Id">@c.Name</option>
+                    }
+                </select>
+            </label>
+        }
+        else
+        {
+            <div class="grid2">
+                <label>Nome<input @bind="Cust.Name" autocomplete="off" /></label>
+                <label>Telefone<input @bind="Cust.Phone" inputmode="tel" autocomplete="off" /></label>
+            </div>
+        }
+    </fieldset>
+
+    <fieldset>
+        <legend>Aparelho</legend>
+        <div class="grid3">
+            <label>Tipo<input @bind="Order.Device" placeholder="Notebook, celular…" /></label>
+            <label>Marca<input @bind="Order.Brand" /></label>
+            <label>Modelo<input @bind="Order.Model" /></label>
+        </div>
+        <div class="grid2">
+            <label>Nº de série / IMEI<input @bind="Order.Serial" /></label>
+            <label>Acessórios deixados<input @bind="Order.Accessories" placeholder="Carregador, capa…" /></label>
+        </div>
+        <label>Defeito relatado
+            <textarea rows="3" @bind="Order.Defect" placeholder="O que o cliente descreveu"></textarea>
+        </label>
+    </fieldset>
+
+    @if (Error is not null)
+    {
+        <p class="error" role="alert">@Error</p>
+    }
+    <div class="actions">
+        <a class="btn" href="os">Cancelar</a>
+        <button class="btn primary" type="submit">Abrir OS</button>
+    </div>
+</form>
+
+@code {
+    private bool NewCustomer { get; set; }
+    private Guid CustomerId { get; set; }
+    private Customer Cust { get; } = new();
+    private ServiceOrder Order { get; } = new();
+    private string? Error { get; set; }
+
+    private void Submit()
+    {
+        try
+        {
+            // Validate the order first so a failed submit never leaves an orphan customer behind.
+            if (string.IsNullOrWhiteSpace(Order.Device) || string.IsNullOrWhiteSpace(Order.Defect))
+            { Error = "Aparelho e defeito são obrigatórios."; return; }
+            if (NewCustomer && string.IsNullOrWhiteSpace(Cust.Name)) { Error = "Informe o nome do cliente."; return; }
+            if (NewCustomer) CustomerId = Store.SaveCustomer(Cust).Id;
+            else if (CustomerId == Guid.Empty) { Error = "Escolha o cliente."; return; }
+            Order.CustomerId = CustomerId;
+            var o = Store.CreateOrder(Order);
+            Nav.NavigateTo($"os/{o.Id}");
+        }
+        catch (ArgumentException e)
+        {
+            Error = e.Message;
+        }
+    }
+}

@@ -1,0 +1,14 @@
+<ol class="stepper" aria-label="Andamento da OS">
+    @foreach (var s in Enum.GetValues<OrderStatus>())
+    {
+        var cls = s < Current ? "done" : s == Current ? "now" : "";
+        <li class="@cls" aria-current="@(s == Current ? "step" : null)">
+            <span class="dot">@(s < Current ? "✓" : ((int)s + 1).ToString())</span>
+            <span class="lbl">@Quote.StatusLabel(s)</span>
+        </li>
+    }
+</ol>
+
+@code {
+    [Parameter, EditorRequired] public OrderStatus Current { get; set; }
+}

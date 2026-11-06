@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Bancada: controle de ordens de serviço para assistência técnica. Demo em Blazor WebAssembly, dados salvos no próprio navegador." />
+    <meta name="theme-color" content="#0f5e52" />
+    <title>Bancada · Ordens de serviço</title>
+    <base href="/" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="stylesheet" href="css/app.css" />
+    <script>
+        (function () {
+            var t = localStorage.getItem('bancada.theme');
+            if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            document.documentElement.dataset.theme = t;
+        })();
+        window.bancada = {
+            toggleTheme: function () {
+                var t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+                document.documentElement.dataset.theme = t;
+                localStorage.setItem('bancada.theme', t);
+                return t;
+            },
+            print: function () { window.print(); }
+        };
+    </script>
+</head>
+<body>
+    <div id="app">
+        <div class="boot"><span class="boot-mark">B</span><span>Carregando a bancada…</span></div>
+    </div>
+    <div id="blazor-error-ui">
+        Ocorreu um erro inesperado. <a href="." class="reload">Recarregar</a>
+        <span class="dismiss" role="button" aria-label="Fechar">✕</span>
+    </div>
+    <script src="_framework/blazor.webassembly.js"></script>
+</body>
+</html>

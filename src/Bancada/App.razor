@@ -1,0 +1,16 @@
+﻿<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Não encontrado · Bancada</PageTitle>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <div class="empty">
+                <h1>Página não encontrada</h1>
+                <p>Esse endereço não existe.</p>
+                <a class="btn primary" href="">Voltar ao painel</a>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>
